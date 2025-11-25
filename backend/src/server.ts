@@ -41,21 +41,7 @@ app.get('/login', (_req, res) => {
     state,
   });
 
-  res.redirect(`https://accounts.spotify.com/authorize?${queryParams}`);
-});
-
-
-app.get('/authorize', (_req, res) => {
-  const state = generateRandomString(16);
-  const scope = 'user-read-private user-read-email playlist-read-private';
-  const queryParams = querystring.stringify({
-    response_type: 'code',
-    client_id: CLIENT_ID,
-    scope,
-    redirect_uri: REDIRECT_URI,
-    state,
-  });
-
+  console.log('Redirecting to Spotify authorize URL:', `https://accounts.spotify.com/authorize?${queryParams}`);
   res.redirect(`https://accounts.spotify.com/authorize?${queryParams}`);
 });
 
