@@ -4,8 +4,10 @@ import dotenv from 'dotenv';
 import querystring from 'querystring';
 import axios from 'axios'
 import { generateRandomString } from './helpers';
+import { userTokenObject } from './types/types';
 
 
+let accessObject: userTokenObject ={access_token: '', refresh_token: ''}
 dotenv.config();
 const app = express();
 app.use(cors());
@@ -67,6 +69,7 @@ app.get('/callback', async (req, res) => {
     );
 
     const { access_token, refresh_token } = response.data;
+    accessObject = {access_token, refresh_token}
     console.log('ACCESS TOKEN:', access_token);
     console.log('REFRESH TOKEN:', refresh_token);
 
@@ -74,5 +77,29 @@ app.get('/callback', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.send('Error getting tokens');
+  }
+});
+
+
+const userBaseUrl = 'https://api.spotify.com/v1/me';
+
+app.get('/user', async (_req, res) => {
+  const { access_token } = accessObject;
+  
+  if (!access_token) {
+    return res.status(401).json({ error: 'Not authenticated. Please login first.' });
+  }
+
+  try {
+    const response = await axios.get(userBaseUrl, {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+    res.json(response.data);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error fetching user data' });
   }
 });
