@@ -3,14 +3,17 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import querystring from 'querystring';
 import axios from 'axios'
-import { generateRandomString } from './helpers';
+import { generateRandomString, reqLimitAndOffsetObj } from './helpers';
 import { userTokenObject } from './types/types';
+import { EN } from './translations/translations';
 
 
-let accessObject: userTokenObject ={access_token: '', refresh_token: ''}
+let accessObject: userTokenObject = { access_token: '', refresh_token: '' }
 dotenv.config();
 const app = express();
 app.use(cors());
+
+const { errorNotAutherised } = EN;
 
 // Provide a root route so visiting http://localhost:3000/ doesn't 404
 app.get('/', (_req, res) => {
@@ -69,7 +72,7 @@ app.get('/callback', async (req, res) => {
     );
 
     const { access_token, refresh_token } = response.data;
-    accessObject = {access_token, refresh_token}
+    accessObject = { access_token, refresh_token }
     console.log('ACCESS TOKEN:', access_token);
     console.log('REFRESH TOKEN:', refresh_token);
 
@@ -81,17 +84,17 @@ app.get('/callback', async (req, res) => {
 });
 
 
-const userBaseUrl = 'https://api.spotify.com/v1/me';
+const apiBaseUrl = 'https://api.spotify.com/v1';
 
 app.get('/user', async (_req, res) => {
   const { access_token } = accessObject;
-  
+
   if (!access_token) {
-    return res.status(401).json({ error: 'Not authenticated. Please login first.' });
+    return res.status(401).json({ error: errorNotAutherised });
   }
 
   try {
-    const response = await axios.get(userBaseUrl, {
+    const response = await axios.get(`${apiBaseUrl}/me`, {
       headers: {
         Authorization: `Bearer ${access_token}`
       }
@@ -103,3 +106,96 @@ app.get('/user', async (_req, res) => {
     res.status(500).json({ error: 'Error fetching user data' });
   }
 });
+
+app.get('/user/playlists', async (req, res) => {
+  const { access_token } = accessObject;
+  if (!access_token) {
+    return res.status(401).json({ error: errorNotAutherised });
+  }
+
+  // parse limit from query string (default 50, clamp 1..50)
+  // const rawLimit = req.query.limit;
+  // const limit = typeof rawLimit === 'string' && rawLimit.trim() !== '' ? Math.max(1, Math.min(50, parseInt(rawLimit, 10) || 50)) : 50;
+  const { limit } = reqLimitAndOffsetObj(req);
+
+  try {
+    // Fetch current user's playlists
+    const response = await axios.get(`${apiBaseUrl}/me/playlists?limit=${limit}`, {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    const err: any = error;
+    console.error('Error fetching playlists:', err.response?.data || err.message || err);
+    const status = err.response?.status || 500;
+    res.status(status).json({ error: 'Error fetching playlists' });
+  }
+});
+
+app.get('/search', async (req, res) => {
+  const { access_token } = accessObject;
+
+  if (!access_token) {
+    return res.status(401).json({ error: errorNotAutherised })
+  }
+
+  try {
+    // Read query parameters from the incoming request
+    const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    if (!q) return res.status(400).json({ error: 'Missing query parameter `q`' });
+
+    const { limit, offset } = reqLimitAndOffsetObj(req);
+
+    const type = typeof req.query.type === 'string' && req.query.type.trim() !== '' ? req.query.type : 'playlist';
+    const qs = querystring.stringify({ q, type, limit, offset });
+    const url = `${apiBaseUrl}/search?${qs}`;
+
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+
+    // return the playlists (Spotify wraps results in .playlists when type=playlist)
+    res.json(response.data);
+  } catch (error) {
+    const err: any = error;
+    console.error('Search error:', err.response?.data || err.message || err);
+    const status = err.response?.status || 500;
+    res.status(status).json({ error: 'Search failed' });
+  }
+})
+
+app.get('/playlist/:id/tracks', async (req, res) => {
+  const { access_token } = accessObject;
+
+  if (!access_token) {
+    return res.status(401).json({ error: errorNotAutherised })
+  }
+
+
+  try {
+
+    const { limit, offset } = reqLimitAndOffsetObj(req);
+    const url = `${apiBaseUrl}/playlists/${req.params.id}/tracks?limit=${limit}&offset=${offset}`;
+
+
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    })
+
+    return res.json(response.data);
+
+  } catch (error) {
+    const err: any = error;
+    console.error('Error fetching playlist tracks:', err.response?.data || err.message || error);
+    const status = err.response?.status || 500;
+    res.status(status).json({ error: 'Error fetching playlist tracks' });
+  }
+
+
+})
