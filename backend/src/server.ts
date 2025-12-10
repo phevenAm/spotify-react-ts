@@ -4,8 +4,8 @@ import dotenv from 'dotenv';
 import querystring from 'querystring';
 import axios from 'axios'
 import { generateRandomString, reqLimitAndOffsetObj } from './helpers';
-import { userTokenObject } from './types/types';
-import { EN } from './translations/translations';
+import type { userTokenObject } from './types/types';
+import type { EN } from './translations/translations';
 
 
 let accessObject: userTokenObject = { access_token: '', refresh_token: '' }
@@ -175,13 +175,11 @@ app.get('/playlist/:id/tracks', async (req, res) => {
     return res.status(401).json({ error: errorNotAutherised })
   }
 
-
   try {
 
     const { limit, offset } = reqLimitAndOffsetObj(req);
     const url = `${apiBaseUrl}/playlists/${req.params.id}/tracks?limit=${limit}&offset=${offset}`;
-
-
+                                                                                                                                 
     const response = await axios.get(url, {
       headers: {
         Authorization: `Bearer ${access_token}`
@@ -199,3 +197,6 @@ app.get('/playlist/:id/tracks', async (req, res) => {
 
 
 })
+
+//!TODO URI for user's profile page.
+https://developer.spotify.com/documentation/web-api/reference/get-current-users-profile
