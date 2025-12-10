@@ -199,4 +199,5 @@ app.get('/playlist/:id/tracks', async (req, res) => {
 })
 
 //!TODO URI for user's profile page.
+//!trial postman too - youtube or something. how do I know these enpoints work?
 https://developer.spotify.com/documentation/web-api/reference/get-current-users-profile
