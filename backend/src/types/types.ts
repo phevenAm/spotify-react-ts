@@ -3,4 +3,4 @@ interface userTokenObject{
     refresh_token: string;
 }
 
-export { userTokenObject };
+export type { userTokenObject };

@@ -5,7 +5,7 @@ import querystring from 'querystring';
 import axios from 'axios'
 import { generateRandomString, reqLimitAndOffsetObj } from './helpers';
 import type { userTokenObject } from './types/types';
-import type { EN } from './translations/translations';
+import { EN } from './translations/translations';
 
 
 let accessObject: userTokenObject = { access_token: '', refresh_token: '' }
@@ -200,4 +200,4 @@ app.get('/playlist/:id/tracks', async (req, res) => {
 
 //!TODO URI for user's profile page.
 //!trial postman too - youtube or something. how do I know these enpoints work?
-https://developer.spotify.com/documentation/web-api/reference/get-current-users-profile
+// https://developer.spotify.com/documentation/web-api/reference/get-current-users-profile

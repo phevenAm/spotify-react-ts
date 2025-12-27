@@ -8,7 +8,7 @@ export const generateRandomString = (length: number): string => {
 };
 
 
-export const reqLimitAndOffsetObj = (req): { limit: number; offset: number } => {
+export const reqLimitAndOffsetObj = (req: any): { limit: number; offset: number } => {
 
   const rawLimit = typeof req.query.limit === 'string' ? req.query.limit : undefined;
   const rawOffset = typeof req.query.offset === 'string' ? req.query.offset : undefined;  
