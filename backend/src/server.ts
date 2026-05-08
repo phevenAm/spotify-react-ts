@@ -160,39 +160,44 @@ app.get("/user/playlists", async (req, res) => {
   }
 });
 
-app.get("/search", async (req, res) => {
-  const { access_token } = accessObject;
+type SearchQuery = {
+  q?: string;
+  type?: string;
+};
 
-  if (!access_token) {
-    return res.status(401).json({ error: errorNotAutherised });
+type ApiError = {
+  message: string;
+};
+
+type SearchResponse = SpotifyApi.SearchResponse | ApiError;
+
+app.get<{}, SearchResponse, {}, SearchQuery>("/search", async (req, res) => {
+  const { q, type } = req.query;
+
+  if (!q || !type) {
+    return res.status(400).json({
+      message: "Missing search query or type",
+    });
   }
 
   try {
-    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    const response = await axios.get<SpotifyApi.SearchResponse>(
+      "https://api.spotify.com/v1/search",
+      {
+        headers: {
+          Authorization: `Bearer ${accessObject.access_token}`,
+        },
+        params: {
+          q,
+          type,
+        },
+      }
+    );
 
-    if (!q) {
-      return res.status(400).json({ error: "Missing query parameter `q`" });
-    }
-
-    const { limit, offset } = reqLimitAndOffsetObj(req);
-
-    const type: SearchType =
-      typeof req.query.type === "string"
-        ? (req.query.type as SearchType)
-        : "playlist";
-
-    const qs = querystring.stringify({ q, type, limit, offset });
-
-    const response = await axios.get(`${apiBaseUrl}/search?${qs}`, {
-      headers: { Authorization: `Bearer ${access_token}` },
-    });
-
-    res.json(response.data);
-  } catch (error: any) {
-    console.error("Search error:", error.response?.data || error.message);
-
-    res.status(error.response?.status || 500).json({
-      error: "Search failed",
+    return res.status(200).json(response.data);
+  } catch {
+    return res.status(500).json({
+      message: "Search failed",
     });
   }
 });
