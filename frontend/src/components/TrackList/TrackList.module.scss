@@ -1,0 +1,100 @@
+// src/components/TrackList/TrackList.module.scss
+
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.list {
+  width: 100%;
+}
+
+.header {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 60px;
+  padding: $space-2 $space-4;
+  color: $grey-4;
+  font-size: $text-xs;
+  font-weight: $weight-semibold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+
+  @include mobile {
+    grid-template-columns: 40px 1fr 60px;
+
+    .album { display: none; }
+  }
+}
+
+.divider {
+  height: 1px;
+  background: $dark-5;
+  margin-bottom: $space-2;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 60px;
+  padding: $space-2 $space-4;
+  border-radius: $border-radius;
+  align-items: center;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $white-faint;
+  }
+
+  @include mobile {
+    grid-template-columns: 40px 1fr 60px;
+  }
+}
+
+.num {
+  color: $grey-4;
+  font-size: $text-sm;
+  text-align: center;
+}
+
+.titleCell {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  min-width: 0;
+}
+
+.thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: $border-radius-sm;
+  flex-shrink: 0;
+}
+
+.trackName {
+  font-size: $text-sm;
+  font-weight: $weight-medium;
+  color: $white;
+  @include truncate;
+}
+
+.artists {
+  font-size: $text-xs;
+  color: $grey-4;
+  @include truncate;
+  margin-top: 2px;
+}
+
+.album {
+  font-size: $text-sm;
+  color: $grey-4;
+  @include truncate;
+  padding-right: $space-4;
+
+  @include mobile {
+    display: none;
+  }
+}
+
+.duration {
+  font-size: $text-sm;
+  color: $grey-4;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,68 @@
+// src/pages/MoodSelector/MoodSelector.module.scss
+
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.page {
+  @include flex-col;
+  gap: $space-8;
+  max-width: 900px;
+}
+
+.header {
+  h1 {
+    font-size: $text-3xl;
+    font-weight: $weight-bold;
+    letter-spacing: -0.5px;
+    margin-bottom: $space-2;
+  }
+
+  p {
+    color: $grey-5;
+    font-size: $text-base;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: $space-4;
+}
+
+.cta {
+  @include flex-between;
+  padding: $space-5 $space-6;
+  background: $dark-3;
+  border-radius: $border-radius-lg;
+  animation: slide-up 0.2s ease;
+
+  p {
+    color: $grey-5;
+    font-size: $text-base;
+
+    strong {
+      color: $white;
+    }
+  }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.goBtn {
+  background: $green;
+  color: $black;
+  font-size: $text-sm;
+  font-weight: $weight-bold;
+  padding: $space-3 $space-6;
+  border-radius: $border-radius-full;
+  transition: background $transition-fast, transform $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    background: $green-light;
+    transform: scale(1.02);
+  }
+}

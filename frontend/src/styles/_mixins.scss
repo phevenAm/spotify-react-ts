@@ -1,0 +1,98 @@
+// src/styles/_mixins.scss
+
+@use 'variables' as *;
+
+// ---- Flex helpers ----
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+// ---- Text truncation ----
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ---- Card base ----
+@mixin card-base {
+  background: $dark-3;
+  border-radius: $border-radius-lg;
+  transition: background $transition-base;
+
+  &:hover {
+    background: $dark-4;
+  }
+}
+
+// ---- Hover lift ----
+@mixin hover-lift {
+  transition: transform $transition-base, box-shadow $transition-base;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+}
+
+// ---- Scrollbar ----
+@mixin custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: $grey-1 transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $grey-1;
+    border-radius: $border-radius-full;
+  }
+}
+
+// ---- Skeleton shimmer ----
+@mixin skeleton {
+  background: linear-gradient(90deg, $dark-4 25%, $dark-5 50%, $dark-4 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: $border-radius;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// ---- Focus ring ----
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid $green;
+    outline-offset: 2px;
+  }
+}
+
+// ---- Responsive ----
+@mixin mobile {
+  @media (max-width: 768px) { @content; }
+}
+
+@mixin tablet {
+  @media (max-width: 1024px) { @content; }
+}

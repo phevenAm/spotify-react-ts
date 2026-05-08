@@ -1,0 +1,111 @@
+// src/pages/Home/Home.module.scss
+
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.page {
+  @include flex-col;
+  gap: $space-12;
+  max-width: 900px;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: $space-6;
+  padding: $space-8;
+  background: linear-gradient(135deg, $dark-4 0%, $dark-3 100%);
+  border-radius: $border-radius-xl;
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: $border-radius-full;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.avatarPlaceholder {
+  width: 96px;
+  height: 96px;
+  border-radius: $border-radius-full;
+  background: $dark-5;
+  @include flex-center;
+  font-size: $text-3xl;
+  font-weight: $weight-bold;
+  flex-shrink: 0;
+}
+
+.greeting {
+  font-size: $text-sm;
+  color: $grey-4;
+  margin-bottom: $space-1;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.name {
+  font-size: $text-4xl;
+  font-weight: $weight-bold;
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+
+.meta {
+  color: $grey-4;
+  font-size: $text-sm;
+  margin-top: $space-2;
+  text-transform: capitalize;
+}
+
+.quickLinks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: $space-4;
+}
+
+.quickLink {
+  @include flex-center;
+  justify-content: flex-start;
+  gap: $space-4;
+  padding: $space-5;
+  background: $dark-3;
+  border-radius: $border-radius-lg;
+  transition: background $transition-base;
+  @include focus-ring;
+
+  &:hover {
+    background: $dark-4;
+    text-decoration: none;
+  }
+}
+
+.qlEmoji {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.qlLabel {
+  font-size: $text-base;
+  font-weight: $weight-semibold;
+  color: $white;
+}
+
+.qlDesc {
+  font-size: $text-xs;
+  color: $grey-4;
+  margin-top: 2px;
+}
+
+.loading {
+  color: $grey-4;
+  padding: $space-8;
+}
+
+.error {
+  color: $grey-4;
+  padding: $space-8;
+
+  a { color: $green; }
+}

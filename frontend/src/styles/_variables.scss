@@ -1,0 +1,80 @@
+// src/styles/_variables.scss
+// Global design tokens — import this into every SCSS module
+
+// ---- Colours ----
+$green:        #1db954;
+$green-dark:   #158a3e;
+$green-light:  #1ed760;
+$black:        #000000;
+$dark-1:       #0a0a0a;
+$dark-2:       #121212;
+$dark-3:       #181818;
+$dark-4:       #242424;
+$dark-5:       #2a2a2a;
+$grey-1:       #3e3e3e;
+$grey-2:       #535353;
+$grey-3:       #727272;
+$grey-4:       #a7a7a7;
+$grey-5:       #b3b3b3;
+$white:        #ffffff;
+$white-dim:    rgba(255, 255, 255, 0.7);
+$white-faint:  rgba(255, 255, 255, 0.1);
+
+// Mood colours
+$mood-calm:      #4a90d9;
+$mood-energetic: #f5a623;
+$mood-romantic:  #e91e8c;
+$mood-focused:   #7c4dff;
+$mood-angry:     #f44336;
+$mood-happy:     #1db954;
+
+// ---- Typography ----
+$font-primary:   'Circular', 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+$font-mono:      'Fira Code', 'Courier New', monospace;
+
+$text-xs:    0.75rem;   // 12px
+$text-sm:    0.875rem;  // 14px
+$text-base:  1rem;      // 16px
+$text-lg:    1.125rem;  // 18px
+$text-xl:    1.25rem;   // 20px
+$text-2xl:   1.5rem;    // 24px
+$text-3xl:   1.875rem;  // 30px
+$text-4xl:   2.25rem;   // 36px
+
+$weight-normal:   400;
+$weight-medium:   500;
+$weight-semibold: 600;
+$weight-bold:     700;
+
+// ---- Spacing ----
+$space-1:  0.25rem;   // 4px
+$space-2:  0.5rem;    // 8px
+$space-3:  0.75rem;   // 12px
+$space-4:  1rem;      // 16px
+$space-5:  1.25rem;   // 20px
+$space-6:  1.5rem;    // 24px
+$space-8:  2rem;      // 32px
+$space-10: 2.5rem;    // 40px
+$space-12: 3rem;      // 48px
+$space-16: 4rem;      // 64px
+
+// ---- Layout ----
+$sidebar-width:     240px;
+$topbar-height:     64px;
+$player-height:     90px;
+$border-radius-sm:  4px;
+$border-radius:     8px;
+$border-radius-lg:  12px;
+$border-radius-xl:  16px;
+$border-radius-full: 9999px;
+
+// ---- Transitions ----
+$transition-fast:   0.15s ease;
+$transition-base:   0.2s ease;
+$transition-slow:   0.3s ease;
+
+// ---- Z-index ----
+$z-sidebar:  100;
+$z-topbar:   200;
+$z-modal:    300;
+$z-toast:    400;
