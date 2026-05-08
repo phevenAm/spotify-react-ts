@@ -11,7 +11,7 @@
     "target": "esnext",
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "types": ["node"],
+    "types": ["node", "spotify-api"],
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],
