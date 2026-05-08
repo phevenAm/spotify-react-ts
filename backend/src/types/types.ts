@@ -4,3 +4,12 @@ interface userTokenObject{
 }
 
 export type { userTokenObject };
+
+export type SearchType =
+  | 'album'
+  | 'artist'
+  | 'playlist'
+  | 'track'
+  | 'show'
+  | 'episode'
+  | 'audiobook';
