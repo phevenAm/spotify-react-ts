@@ -12,7 +12,11 @@ import { EN } from "./translations/translations";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors(
+  {
+    origin: "http://localhost:5173",
+  }
+));
 
 const apiBaseUrl = "https://api.spotify.com/v1";
 
