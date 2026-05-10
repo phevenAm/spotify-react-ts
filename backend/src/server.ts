@@ -1,3 +1,4 @@
+
 //imports → setup/constants → state → routes → listen.
 import express from "express";
 import cors from "cors";
@@ -8,6 +9,8 @@ import axios from "axios";
 import { generateRandomString, reqLimitAndOffsetObj } from "./helpers";
 import type { SearchType, userTokenObject } from "./types/types";
 import { EN } from "./translations/translations";
+
+import type {SpotifyApi} from "../../shared/types"
 
 dotenv.config();
 

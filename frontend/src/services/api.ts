@@ -10,6 +10,8 @@
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
+import type{ SpotifyApi} from  "../../../shared/types"
+
 // ---- Generic fetch wrapper ----
 // Centralises error handling so individual functions stay clean.
 async function apiFetch<T>(path: string): Promise<T> {
