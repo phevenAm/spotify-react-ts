@@ -1,15 +1,13 @@
 // src/pages/Home/Home.tsx
 import { useApi } from '../../hooks/useApi';
-import { fetchUser } from '../../services/api';
+import { fetchUser, loginWithSpotify } from '../../services/api';
 import styles from './Home.module.scss';
 
 export default function Home() {
   const { data: user, loading, error } = useApi(fetchUser);
 
   if (loading) return <div className={styles.loading}>Loading…</div>;
-  if (error)   return <div className={styles.error}>Not logged in — <a href="http://127.0.0.1:3000/login">
-  log in with Spotify
-</a></div>;
+  if (error)   return <div className={styles.error}>Not logged in — <button onClick={loginWithSpotify}> Sign In</button></div>;
 
   const avatar = user?.images?.[0]?.url;
 
