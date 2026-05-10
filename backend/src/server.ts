@@ -10,7 +10,7 @@ import { generateRandomString, reqLimitAndOffsetObj } from "./helpers";
 import type { userTokenObject } from "./types/types";
 import { EN } from "./translations/translations";
 
-import type {SpotifyApi} from "../../shared/types"
+import type {SpotifyApi} from "./types/types"
 
 dotenv.config();
 
