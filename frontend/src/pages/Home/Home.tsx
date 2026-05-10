@@ -7,7 +7,9 @@ export default function Home() {
   const { data: user, loading, error } = useApi(fetchUser);
 
   if (loading) return <div className={styles.loading}>Loading…</div>;
-  if (error)   return <div className={styles.error}>Not logged in — <a href="http://localhost:3000/login">log in with Spotify</a></div>;
+  if (error)   return <div className={styles.error}>Not logged in — <a href="http://127.0.0.1:3000/login">
+  log in with Spotify
+</a></div>;
 
   const avatar = user?.images?.[0]?.url;
 

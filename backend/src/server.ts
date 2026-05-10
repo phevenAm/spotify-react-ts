@@ -79,7 +79,7 @@ app.get("/callback", async (req, res) => {
     const { access_token, refresh_token } = response.data;
     accessObject = { access_token, refresh_token };
 
-    res.send("Login successful! Check backend console for tokens.");
+    res.redirect("http://localhost:5173");
   } catch (error: any) {
     console.error("TOKEN ERROR:", error.response?.data || error.message);
     res.status(500).send("Error getting tokens");
