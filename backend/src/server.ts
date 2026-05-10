@@ -7,7 +7,7 @@ import querystring from "querystring";
 import axios from "axios";
 
 import { generateRandomString, reqLimitAndOffsetObj } from "./helpers";
-import type { SearchType, userTokenObject } from "./types/types";
+import type { userTokenObject } from "./types/types";
 import { EN } from "./translations/translations";
 
 import type {SpotifyApi} from "../../shared/types"
