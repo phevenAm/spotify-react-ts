@@ -15,7 +15,9 @@ import type{ SpotifyApi} from  "../../../shared/types"
 // ---- Generic fetch wrapper ----
 // Centralises error handling so individual functions stay clean.
 async function apiFetch<T>(path: string): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`);
+const response = await fetch(`${BASE_URL}${path}`, {
+  credentials: "include",
+});
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));

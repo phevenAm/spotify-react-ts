@@ -4,9 +4,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import querystring from "querystring";
 import axios from "axios";
+import session from "express-session";
 
 import { generateRandomString, reqLimitAndOffsetObj } from "./helpers";
-import type { userTokenObject } from "./types/types";
 import { EN } from "./translations/translations";
 
 import type { SpotifyApi } from "./types/types";
@@ -14,9 +14,34 @@ import type { SpotifyApi } from "./types/types";
 dotenv.config();
 
 const app = express();
+
+const IS_PROD = process.env.NODE_ENV === "production";
+
+// ── CORS ─────────────────────────────────────────────────────────────────────
+// credentials:true is REQUIRED for cookies to be sent cross-origin.
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://spotify-react-ts-five.vercel.app"],
+    origin: [
+      "http://127.0.0.1:5173",
+      "http://localhost:5173",
+      "https://spotify-react-ts-five.vercel.app",
+    ],
+    credentials: true, // ← must be true so Set-Cookie is respected by the browser
+  }),
+);
+
+// ── SESSION ───────────────────────────────────────────────────────────────────
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "fallback-secret-change-me",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: IS_PROD,                    // true on Render (HTTPS), false locally
+      sameSite: IS_PROD ? "none" : "lax", // "none" needed for cross-site Vercel→Render
+      maxAge: 1000 * 60 * 60,             // 1 hour
+    },
   }),
 );
 
@@ -28,10 +53,7 @@ const REDIRECT_URI = process.env.REDIRECT_URI!;
 const FRONTEND_URL = process.env.FRONTEND_URL!;
 const { errorNotAutherised } = EN;
 
-let accessObject: userTokenObject = {
-  access_token: "",
-  refresh_token: "",
-};
+// ── ROUTES ────────────────────────────────────────────────────────────────────
 
 app.get("/", (_req, res) => {
   res.redirect("/login");
@@ -53,13 +75,17 @@ app.get("/login", (_req, res) => {
     redirect_uri: REDIRECT_URI,
     state,
   });
-  console.log("REDIRECT_URI:", REDIRECT_URI);
+  //console.log("REDIRECT_URI:", REDIRECT_URI);
 
   res.redirect(`https://accounts.spotify.com/authorize?${queryParams}`);
 });
 
 app.get("/callback", async (req, res) => {
   const code = typeof req.query.code === "string" ? req.query.code : null;
+
+  if (!code) {
+    return res.status(400).send("Missing code parameter");
+  }
 
   try {
     const response = await axios.post(
@@ -80,17 +106,28 @@ app.get("/callback", async (req, res) => {
     );
 
     const { access_token, refresh_token } = response.data;
-    accessObject = { access_token, refresh_token };
 
-    res.redirect(FRONTEND_URL);
+    // Store tokens in the session — not in a global variable
+    req.session.access_token = access_token;
+    req.session.refresh_token = refresh_token;
+
+    // Save session BEFORE redirecting to avoid a race where the redirect
+    // arrives at the frontend before the session write completes.
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.status(500).send("Session save failed");
+      }
+      res.redirect(FRONTEND_URL);
+    });
   } catch (error: any) {
     console.error("TOKEN ERROR:", error.response?.data || error.message);
     res.status(500).send("Error getting tokens");
   }
 });
 
-app.get("/me", async (_req, res) => {
-  const { access_token } = accessObject;
+app.get("/me", async (req, res) => {
+  const access_token = req.session.access_token;
 
   if (!access_token) {
     return res.status(401).json({ error: errorNotAutherised });
@@ -100,7 +137,6 @@ app.get("/me", async (_req, res) => {
     const result = await axios.get(`${apiBaseUrl}/me`, {
       headers: { Authorization: `Bearer ${access_token}` },
     });
-
     res.json(result.data);
   } catch (error: any) {
     console.error(error.response?.data || error.message);
@@ -109,7 +145,7 @@ app.get("/me", async (_req, res) => {
 });
 
 app.get("/me/top/:type", async (req, res) => {
-  const { access_token } = accessObject;
+  const access_token = req.session.access_token;
 
   if (!access_token) {
     return res.status(401).json({ error: errorNotAutherised });
@@ -129,7 +165,6 @@ app.get("/me/top/:type", async (req, res) => {
         headers: { Authorization: `Bearer ${access_token}` },
       },
     );
-
     res.json(result.data);
   } catch (error: any) {
     console.error(error.response?.data || error.message);
@@ -138,7 +173,7 @@ app.get("/me/top/:type", async (req, res) => {
 });
 
 app.get("/user/playlists", async (req, res) => {
-  const { access_token } = accessObject;
+  const access_token = req.session.access_token;
 
   if (!access_token) {
     return res.status(401).json({ error: errorNotAutherised });
@@ -153,14 +188,12 @@ app.get("/user/playlists", async (req, res) => {
         headers: { Authorization: `Bearer ${access_token}` },
       },
     );
-
     res.json(response.data);
   } catch (error: any) {
     console.error(
       "Error fetching playlists:",
       error.response?.data || error.message,
     );
-
     res.status(error.response?.status || 500).json({
       error: "Error fetching playlists",
     });
@@ -179,38 +212,29 @@ type ApiError = {
 type SearchResponse = SpotifyApi.SearchResponse | ApiError;
 
 app.get<{}, SearchResponse, {}, SearchQuery>("/search", async (req, res) => {
+  const access_token = req.session.access_token;
   const { q, type } = req.query;
 
   if (!q || !type) {
-    return res.status(400).json({
-      message: "Missing search query or type",
-    });
+    return res.status(400).json({ message: "Missing search query or type" });
   }
 
   try {
     const response = await axios.get<SpotifyApi.SearchResponse>(
       "https://api.spotify.com/v1/search",
       {
-        headers: {
-          Authorization: `Bearer ${accessObject.access_token}`,
-        },
-        params: {
-          q,
-          type,
-        },
+        headers: { Authorization: `Bearer ${access_token}` },
+        params: { q, type },
       },
     );
-
     return res.status(200).json(response.data);
   } catch {
-    return res.status(500).json({
-      message: "Search failed",
-    });
+    return res.status(500).json({ message: "Search failed" });
   }
 });
 
 app.get("/playlist/:id/tracks", async (req, res) => {
-  const { access_token } = accessObject;
+  const access_token = req.session.access_token;
 
   if (!access_token) {
     return res.status(401).json({ error: errorNotAutherised });
@@ -225,14 +249,12 @@ app.get("/playlist/:id/tracks", async (req, res) => {
         headers: { Authorization: `Bearer ${access_token}` },
       },
     );
-
     res.json(response.data);
   } catch (error: any) {
     console.error(
       "Error fetching playlist tracks:",
       error.response?.data || error.message,
     );
-
     res.status(error.response?.status || 500).json({
       error: "Error fetching playlist tracks",
     });
@@ -240,5 +262,5 @@ app.get("/playlist/:id/tracks", async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log("Server is running on http://localhost:3000");
+  console.log("Server is running on http://127.0.0.1:3000");
 });
