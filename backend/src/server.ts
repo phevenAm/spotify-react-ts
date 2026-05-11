@@ -54,6 +54,7 @@ app.get("/login", (_req, res) => {
     redirect_uri: REDIRECT_URI,
     state,
   });
+  console.log("REDIRECT_URI:", REDIRECT_URI);
 
   res.redirect(`https://accounts.spotify.com/authorize?${queryParams}`);
 });
