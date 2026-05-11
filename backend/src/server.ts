@@ -1,4 +1,3 @@
-
 //imports → setup/constants → state → routes → listen.
 import express from "express";
 import cors from "cors";
@@ -10,23 +9,23 @@ import { generateRandomString, reqLimitAndOffsetObj } from "./helpers";
 import type { userTokenObject } from "./types/types";
 import { EN } from "./translations/translations";
 
-import type {SpotifyApi} from "./types/types"
+import type { SpotifyApi } from "./types/types";
 
 dotenv.config();
 
 const app = express();
-app.use(cors(
-  {
+app.use(
+  cors({
     origin: ["http://localhost:5173", "https://your-vercel-app.vercel.app"],
-  }
-));
+  }),
+);
 
 const apiBaseUrl = "https://api.spotify.com/v1";
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID!;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET!;
 const REDIRECT_URI = process.env.REDIRECT_URI!;
-
+const FRONTEND_URL = process.env.FRONTEND_URL!;
 const { errorNotAutherised } = EN;
 
 let accessObject: userTokenObject = {
@@ -83,7 +82,7 @@ app.get("/callback", async (req, res) => {
     const { access_token, refresh_token } = response.data;
     accessObject = { access_token, refresh_token };
 
-    res.redirect("http://localhost:5173");
+    res.redirect(FRONTEND_URL);
   } catch (error: any) {
     console.error("TOKEN ERROR:", error.response?.data || error.message);
     res.status(500).send("Error getting tokens");
@@ -199,7 +198,7 @@ app.get<{}, SearchResponse, {}, SearchQuery>("/search", async (req, res) => {
           q,
           type,
         },
-      }
+      },
     );
 
     return res.status(200).json(response.data);
