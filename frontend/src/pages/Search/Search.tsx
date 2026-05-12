@@ -1,10 +1,10 @@
 // src/pages/Search/Search.tsx
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { searchPlaylists } from '../../services/api';
-import { usePaginated } from '../../hooks/useApi';
-import PlaylistCard from '../../components/PlaylistCard/PlaylistCard';
-import styles from './Search.module.scss';
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { searchPlaylists } from "../../services/api";
+import { usePaginated } from "../../hooks/useApi";
+import PlaylistCard from "../../components/PlaylistCard/PlaylistCard";
+import styles from "./Search.module.scss";
 
 const LIMIT = 20;
 
@@ -12,19 +12,22 @@ export default function Search() {
   // useSearchParams lets us read ?q=... and ?mood=... from the URL.
   // The MoodSelector page navigates here with those params pre-filled.
   const [searchParams, setSearchParams] = useSearchParams();
-  const [input, setInput] = useState(searchParams.get('q') ?? '');
-  const [query, setQuery] = useState(searchParams.get('q') ?? '');
+  const [input, setInput] = useState(searchParams.get("q") ?? "");
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
 
   const { data, loading, error, offset, next, prev, reset } = usePaginated(
     (limit, off) => searchPlaylists(query, limit, off),
-    LIMIT
+    LIMIT,
   );
 
   // When the mood page sends us here with a pre-filled query, run it immediately
   useEffect(() => {
-    const q = searchParams.get('q');
-    if (q) { setInput(q); setQuery(q); }
-  }, []);
+    const q = searchParams.get("q");
+    if (q) {
+      setInput(q);
+      setQuery(q);
+    }
+  }, [searchParams]);
 
   function handleSearch() {
     if (!input.trim()) return;
@@ -33,11 +36,11 @@ export default function Search() {
     reset();
   }
 
-  const page    = Math.floor(offset / LIMIT) + 1;
+  const page = Math.floor(offset / LIMIT) + 1;
   const hasNext = !!data?.playlists?.next;
   const hasPrev = offset > 0;
   const results = data?.playlists?.items ?? [];
-  const total   = data?.playlists?.total ?? 0;
+  const total = data?.playlists?.total ?? 0;
 
   return (
     <div className={styles.page}>
@@ -48,8 +51,8 @@ export default function Search() {
           type="text"
           value={input}
           placeholder="Search playlists…"
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSearch()}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           className={styles.input}
         />
         <button onClick={handleSearch} className={styles.searchBtn}>
@@ -59,7 +62,7 @@ export default function Search() {
 
       {query && (
         <p className={styles.resultMeta}>
-          {loading ? 'Searching…' : `${total} results for "${query}"`}
+          {loading ? "Searching…" : `${total} results for "${query}"`}
         </p>
       )}
 
@@ -68,15 +71,27 @@ export default function Search() {
       {!loading && results.length > 0 && (
         <>
           <div className={styles.grid}>
-            {results.map(playlist => (
+            {results.filter(Boolean).map((playlist) => (
               <PlaylistCard key={playlist.id} playlist={playlist} />
             ))}
           </div>
 
           <div className={styles.pagination}>
-            <button onClick={prev} disabled={!hasPrev} className={styles.pageBtn}>← Prev</button>
+            <button
+              onClick={prev}
+              disabled={!hasPrev}
+              className={styles.pageBtn}
+            >
+              ← Prev
+            </button>
             <span className={styles.pageNum}>Page {page}</span>
-            <button onClick={next} disabled={!hasNext} className={styles.pageBtn}>Next →</button>
+            <button
+              onClick={next}
+              disabled={!hasNext}
+              className={styles.pageBtn}
+            >
+              Next →
+            </button>
           </div>
         </>
       )}
