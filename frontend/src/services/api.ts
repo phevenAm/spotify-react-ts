@@ -14,14 +14,44 @@ import type{ SpotifyApi} from  "../../../shared/types"
 
 // ---- Generic fetch wrapper ----
 // Centralises error handling so individual functions stay clean.
-async function apiFetch<T>(path: string): Promise<T> {
-const response = await fetch(`${BASE_URL}${path}`, {
-  credentials: "include",
-});
+//async function apiFetch<T>(path: string): Promise<T> {
+//const response = await fetch(`${BASE_URL}${path}`, {
+//  credentials: "include",
+//});
+
+//  if (!response.ok) {
+//    const body = await response.json().catch(() => ({}));
+//    throw new Error(body.error || `HTTP ${response.status}`);
+//  }
+
+//  return response.json() as Promise<T>;
+//}
+
+async function apiFetch<T>(
+  path: string,
+  options?: RequestInit
+): Promise<T> {
+  const response = await fetch(`${BASE_URL}${path}`, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+    ...options,
+  });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || `HTTP ${response.status}`);
+    let errorMessage = `HTTP ${response.status}`;
+
+    try {
+      const body = await response.json();
+      errorMessage = body.error || errorMessage;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any){
+      console.error(error.message ?? error)
+    }
+
+    throw new Error(errorMessage);
   }
 
   return response.json() as Promise<T>;
