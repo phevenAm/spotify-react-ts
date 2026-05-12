@@ -67,9 +67,22 @@ export async function fetchMyPlaylists(limit = 20, offset = 0) {
 }
 
 // ---- Search ----
-export async function searchPlaylists(q: string, limit = 20, offset = 0) {
-  const params = new URLSearchParams({ q, type: 'playlist', limit: String(limit), offset: String(offset) });
-  return apiFetch<SpotifyApi.SearchResponse>(`/search?${params}`);
+export async function searchPlaylists(
+  q: string,
+  limit = 20,
+  offset = 0,
+  type: string[] = ["playlist"]
+) {
+  const params = new URLSearchParams({
+    q,
+    type: type.join(","),
+    limit: String(limit),
+    offset: String(offset),
+  });
+
+  return apiFetch<SpotifyApi.SearchResponse>(
+    `/search?${params}`
+  );
 }
 
 // ---- Playlist tracks ----
