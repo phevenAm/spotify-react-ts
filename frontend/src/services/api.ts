@@ -29,32 +29,24 @@ import type{ SpotifyApi} from  "../../../shared/types"
 
 async function apiFetch<T>(
   path: string,
-  options?: RequestInit
+  options: RequestInit = {}
 ): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+
     credentials: "include",
+
     headers: {
       "Content-Type": "application/json",
-      ...options?.headers,
+      ...(options.headers || {}),
     },
-    ...options,
   });
 
   if (!response.ok) {
-    let errorMessage = `HTTP ${response.status}`;
-
-    try {
-      const body = await response.json();
-      errorMessage = body.error || errorMessage;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any){
-      console.error(error.message ?? error)
-    }
-
-    throw new Error(errorMessage);
+    throw new Error(`HTTP ${response.status}`);
   }
 
-  return response.json() as Promise<T>;
+  return response.json();
 }
 
 // ---- Auth ----
