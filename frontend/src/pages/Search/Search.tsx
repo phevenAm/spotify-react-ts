@@ -1,46 +1,118 @@
 // src/pages/Search/Search.tsx
-import { useState, useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { searchPlaylists } from "../../services/api";
-import { usePaginated } from "../../hooks/useApi";
+
+import {
+  searchSpotify,
+  type SearchType,
+  type SpotifyApi,
+} from "../../services/api";
+
 import PlaylistCard from "../../components/PlaylistCard/PlaylistCard";
+
 import styles from "./Search.module.scss";
 
 const LIMIT = 20;
 
 export default function Search() {
-  // useSearchParams lets us read ?q=... and ?mood=... from the URL.
-  // The MoodSelector page navigates here with those params pre-filled.
   const [searchParams, setSearchParams] = useSearchParams();
-  const [input, setInput] = useState(searchParams.get("q") ?? "");
-  const [query, setQuery] = useState(searchParams.get("q") ?? "");
 
-  const { data, loading, error, offset, next, prev, reset } = usePaginated(
-    (limit, off) => searchPlaylists(query, limit, off),
-    LIMIT,
-  );
+  const initialQuery = searchParams.get("q") ?? "";
 
-  // When the mood page sends us here with a pre-filled query, run it immediately
+  const [input, setInput] = useState(initialQuery);
+  const [query, setQuery] = useState(initialQuery);
+
+  const [type, setType] = useState<SearchType>("track");
+
+  const [data, setData] =
+    useState<SpotifyApi.SearchResponse | null>(null);
+
+  const [loading, setLoading] = useState(false);
+
+  const [error, setError] = useState<string | null>(null);
+
+  const [offset, setOffset] = useState(0);
+
   useEffect(() => {
-    const q = searchParams.get("q");
-    if (q) {
-      setInput(q);
-      setQuery(q);
+    const trimmed = query.trim();
+
+    if (!trimmed) return;
+
+    let cancelled = false;
+
+    async function runSearch() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await searchSpotify(
+          trimmed,
+          type,
+          LIMIT,
+          offset,
+        );
+
+        if (!cancelled) {
+          setData(result);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Search failed",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
     }
-  }, [searchParams]);
+
+    runSearch();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [query, type, offset]);
 
   function handleSearch() {
-    if (!input.trim()) return;
-    setQuery(input.trim());
-    setSearchParams({ q: input.trim() });
-    reset();
+    const trimmed = input.trim();
+
+    if (!trimmed) return;
+
+    setOffset(0);
+
+    setQuery(trimmed);
+
+    setSearchParams({
+      q: trimmed,
+    });
   }
 
-  const page = Math.floor(offset / LIMIT) + 1;
-  const hasNext = !!data?.playlists?.next;
+const tracks = (data?.tracks?.items ?? []) as SpotifyApi.TrackItem[];
+  const playlists = data?.playlists?.items ?? [];
+
+  const results =
+    type === "track"
+      ? tracks.filter(Boolean)
+      : playlists.filter(Boolean);
+
+  const total =
+    type === "track"
+      ? data?.tracks?.total ?? 0
+      : data?.playlists?.total ?? 0;
+
+  const hasNext =
+    type === "track"
+      ? Boolean(data?.tracks?.next)
+      : Boolean(data?.playlists?.next);
+
   const hasPrev = offset > 0;
-  const results = data?.playlists?.items ?? [];
-  const total = data?.playlists?.total ?? 0;
+
+  const page = Math.floor(offset / LIMIT) + 1;
 
   return (
     <div className={styles.page}>
@@ -50,50 +122,125 @@ export default function Search() {
         <input
           type="text"
           value={input}
-          placeholder="Search playlists…"
+          placeholder="Search Spotify..."
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleSearch();
+            }
+          }}
           className={styles.input}
         />
-        <button onClick={handleSearch} className={styles.searchBtn}>
+
+        <select
+          value={type}
+          onChange={(e) =>
+            setType(e.target.value as SearchType)
+          }
+          className={styles.selectType}
+        >
+          <option value="track">Songs</option>
+          <option value="playlist">Playlists</option>
+        </select>
+
+        <button
+          onClick={handleSearch}
+          className={styles.searchBtn}
+        >
           Search
         </button>
       </div>
 
-      {query && (
+      {!query && (
         <p className={styles.resultMeta}>
-          {loading ? "Searching…" : `${total} results for "${query}"`}
+          Enter a search term.
         </p>
       )}
 
-      {error && <div className={styles.error}>{error}</div>}
+      {query && (
+        <p className={styles.resultMeta}>
+          {loading
+            ? "Searching..."
+            : `${total} results`}
+        </p>
+      )}
 
-      {!loading && results.length > 0 && (
-        <>
+      {error && (
+        <div className={styles.error}>
+          {error}
+        </div>
+      )}
+
+      {!loading &&
+        type === "playlist" &&
+        results.length > 0 && (
           <div className={styles.grid}>
-            {results.filter(Boolean).map((playlist) => (
-              <PlaylistCard key={playlist.id} playlist={playlist} />
+{playlists.filter(Boolean).map((playlist) => (
+              <PlaylistCard
+                key={playlist.id}
+                playlist={playlist}
+              />
             ))}
           </div>
+        )}
 
-          <div className={styles.pagination}>
-            <button
-              onClick={prev}
-              disabled={!hasPrev}
-              className={styles.pageBtn}
-            >
-              ← Prev
-            </button>
-            <span className={styles.pageNum}>Page {page}</span>
-            <button
-              onClick={next}
-              disabled={!hasNext}
-              className={styles.pageBtn}
-            >
-              Next →
-            </button>
+      {!loading &&
+        type === "track" &&
+        results.length > 0 && (
+          <div className={styles.trackList}>
+            {tracks.map((track) => (
+              <div
+                key={track.id}
+                className={styles.trackRow}
+              >
+                <img
+                  src={track.album.images?.[0]?.url}
+                  alt={track.name}
+                  className={styles.trackImage}
+                />
+
+                <div>
+                  <p>{track.name}</p>
+
+                  <p>
+                    {track.artists
+                      .map((artist) => artist.name)
+                      .join(", ")}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
-        </>
+        )}
+
+      {!loading && results.length > 0 && (
+        <div className={styles.pagination}>
+          <button
+            onClick={() =>
+              setOffset((prev) =>
+                Math.max(prev - LIMIT, 0),
+              )
+            }
+            disabled={!hasPrev}
+            className={styles.pageBtn}
+          >
+            ← Prev
+          </button>
+
+          <span className={styles.pageNum}>
+            Page {page}
+          </span>
+
+          <button
+            onClick={() =>
+              setOffset((prev) => prev + LIMIT)
+            }
+            disabled={!hasNext}
+            className={styles.pageBtn}
+          >
+            Next →
+          </button>
+        </div>
       )}
     </div>
   );

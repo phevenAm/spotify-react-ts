@@ -55,6 +55,18 @@ export namespace SpotifyApi {
   export interface TrackItem {
     track: Track;
     added_at: string;
+     id: string;
+  name: string;
+
+  album: {
+    images: {
+      url: string;
+    }[];
+  };
+
+  artists: {
+    name: string;
+  }[];
   }
 
   export interface Track {

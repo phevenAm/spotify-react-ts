@@ -33,8 +33,13 @@
   outline: none;
   transition: border-color $transition-fast;
 
-  &::placeholder { color: $grey-3; }
-  &:focus { border-color: $white; }
+  &::placeholder {
+    color: $grey-3;
+  }
+
+  &:focus {
+    border-color: $white;
+  }
 }
 
 .searchBtn {
@@ -47,7 +52,9 @@
   transition: background $transition-fast;
   @include focus-ring;
 
-  &:hover { background: $grey-5; }
+  &:hover {
+    background: $grey-5;
+  }
 }
 
 .resultMeta {
@@ -77,8 +84,14 @@
   transition: background $transition-fast;
   @include focus-ring;
 
-  &:hover:not(:disabled) { background: $dark-5; }
-  &:disabled { opacity: 0.3; cursor: not-allowed; }
+  &:hover:not(:disabled) {
+    background: $dark-5;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
 }
 
 .pageNum {
@@ -93,4 +106,187 @@
   padding: $space-4;
   background: rgba(244, 67, 54, 0.1);
   border-radius: $border-radius;
+}
+
+.searchControls {
+  @include flex-col;
+  gap: $space-3;
+}
+
+.selectType {
+  min-width: 140px;
+  height: 44px;
+
+  padding: 0 1rem;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+
+  background-color: #181818;
+  color: #fff;
+
+  font-size: 0.95rem;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+
+  appearance: none;
+
+  background-image:
+    linear-gradient(45deg, transparent 50%, white 50%),
+    linear-gradient(135deg, white 50%, transparent 50%);
+
+  background-position:
+    calc(100% - 18px) calc(60% - 3px),
+    calc(100% - 12px) calc(60% - 3px);
+
+  background-size: 6px 6px;
+
+  background-repeat: no-repeat;
+}
+
+.select:hover {
+  border-color: #1db954;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #1db954;
+
+  box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.2);
+}
+
+
+.typeToggle {
+  display: inline-flex;
+  width: fit-content;
+  gap: $space-1;
+  padding: $space-1;
+  background: $dark-4;
+  border: 1px solid $dark-5;
+  border-radius: $border-radius-full;
+}
+
+.typeBtn,
+.activeType {
+  border: 0;
+  border-radius: $border-radius-full;
+  padding: $space-2 $space-4;
+  font-family: inherit;
+  font-size: $text-sm;
+  font-weight: $weight-semibold;
+  cursor: pointer;
+  transition: background $transition-fast, color $transition-fast;
+  @include focus-ring;
+}
+
+.typeBtn {
+  background: transparent;
+  color: $grey-3;
+
+  &:hover {
+    color: $white;
+  }
+}
+
+.activeType {
+  background: $white;
+  color: $black;
+}
+
+.trackList {
+  @include flex-col;
+  gap: $space-2;
+}
+
+.trackRow {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: $space-4;
+  padding: $space-3;
+  background: $dark-3;
+  border-radius: $border-radius;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $dark-4;
+  }
+}
+
+.trackImage,
+.trackPlaceholder {
+  width: 56px;
+  height: 56px;
+  border-radius: $border-radius-sm;
+  object-fit: cover;
+  background: $dark-5;
+}
+
+.trackInfo {
+  min-width: 0;
+}
+
+.trackName,
+.trackMeta,
+.trackAlbum {
+  margin: 0;
+}
+
+.trackName {
+  color: $white;
+  font-size: $text-sm;
+  font-weight: $weight-semibold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trackMeta,
+.trackAlbum {
+  color: $grey-4;
+  font-size: $text-sm;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotifyLink {
+  color: $white;
+  font-size: $text-sm;
+  font-weight: $weight-bold;
+  text-decoration: none;
+  padding: $space-2 $space-4;
+  border-radius: $border-radius-full;
+  background: $dark-5;
+  transition: background $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    background: $grey-1;
+  }
+}
+
+@media (max-width: 720px) {
+  .searchBar {
+    flex-direction: column;
+  }
+
+  .trackRow {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+  }
+
+  .trackImage,
+  .trackPlaceholder {
+    width: 48px;
+    height: 48px;
+  }
+
+  .trackAlbum {
+    display: none;
+  }
 }
