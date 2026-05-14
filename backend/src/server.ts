@@ -44,6 +44,8 @@ const { errorNotAutherised } = EN;
 type SearchQuery = {
   q?: string;
   type?: string;
+  limit?: string;
+  offset?: string;
 };
 
 type ApiError = {
@@ -125,7 +127,6 @@ app.get("/login", (_req, res) => {
 
 //!After sign in, request access and refresh tokens via callback (callback from spotidy gives a temp code and state.)
 app.get("/callback", async (req, res) => {
-
   const returnedState =
     typeof req.query.state === "string" ? req.query.state : null;
 
@@ -319,44 +320,47 @@ app.get("/playlist/:id/tracks", async (req, res) => {
 // SEARCH ROUTES
 // ─────────────────────────────────────────────────────────────
 
-app.get<{}, SearchResponse, {}, SearchQuery>(
-  "/search",
+app.get<{}, SearchResponse, {}, SearchQuery>("/search", async (req, res) => {
+  const access_token = req.session.access_token;
 
-  async (req, res) => {
-    const access_token = req.session.access_token;
+  if (!access_token) {
+    return res.status(401).json({ message: errorNotAutherised });
+  }
 
-    const { q, type } = req.query;
+  const { q, type } = req.query;
+  const { limit, offset } = reqLimitAndOffsetObj(req);
 
-    if (!q || !type) {
-      return res.status(400).json({
-        message: "Missing search query or type",
-      });
-    }
+  if (!q || !type) {
+    return res.status(400).json({
+      message: "Missing search query or type",
+    });
+  }
 
-    try {
-      const response = await axios.get<SpotifyApi.SearchResponse>(
-        "https://api.spotify.com/v1/search",
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-
-          params: {
-            q,
-            type,
-          },
+  try {
+    const response = await axios.get<SpotifyApi.SearchResponse>(
+      `${apiBaseUrl}/search`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
         },
-      );
+        params: {
+          q,
+          type,
+          limit,
+          offset,
+        },
+      },
+    );
 
-      return res.status(200).json(response.data);
-    } catch {
-      return res.status(500).json({
-        message: "Search failed",
-      });
-    }
-  },
-);
+    return res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error("Search failed:", error.response?.data || error.message);
 
+    return res.status(error.response?.status || 500).json({
+      message: "Search failed",
+    });
+  }
+});
 // ─────────────────────────────────────────────────────────────
 // SERVER
 // ─────────────────────────────────────────────────────────────

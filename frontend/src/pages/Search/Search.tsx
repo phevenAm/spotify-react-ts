@@ -13,56 +13,44 @@ import PlaylistCard from "../../components/PlaylistCard/PlaylistCard";
 
 import styles from "./Search.module.scss";
 
-const LIMIT = 20;
+const searchLimit = 10;
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const initialQuery = searchParams.get("q") ?? "";
+  const query = searchParams.get("q") ?? "";
+  const type = (searchParams.get("type") ?? "track") as SearchType;
+  const offset = Number(searchParams.get("offset") ?? 0);
 
-  const [input, setInput] = useState(initialQuery);
-  const [query, setQuery] = useState(initialQuery);
+  const [input, setInput] = useState(query);
 
-  const [type, setType] = useState<SearchType>("track");
-
-  const [data, setData] =
-    useState<SpotifyApi.SearchResponse | null>(null);
+  const [data, setData] = useState<SpotifyApi.SearchResponse | null>(null);
 
   const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
-  const [offset, setOffset] = useState(0);
-
   useEffect(() => {
-    const trimmed = query.trim();
+    if (!query || !type) {
+      return;
+    }
 
-    if (!trimmed) return;
-
-    let cancelled = false;
+    let cancelled = false; //!cleanup
 
     async function runSearch() {
       setLoading(true);
       setError(null);
+      console.log(type, offset);
 
       try {
-        const result = await searchSpotify(
-          trimmed,
-          type,
-          LIMIT,
-          offset,
-        );
+        const result = await searchSpotify(query, type, searchLimit, offset);
 
         if (!cancelled) {
           setData(result);
         }
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Search failed",
-          );
+          setError(err instanceof Error ? err.message : "Search failed");
         }
       } finally {
         if (!cancelled) {
@@ -83,27 +71,23 @@ export default function Search() {
 
     if (!trimmed) return;
 
-    setOffset(0);
-
-    setQuery(trimmed);
-
     setSearchParams({
       q: trimmed,
+      type,
+      offset: "0",
     });
   }
 
-const tracks = (data?.tracks?.items ?? []) as SpotifyApi.TrackItem[];
+  const tracks = (data?.tracks?.items ?? []) as SpotifyApi.TrackItem[];
   const playlists = data?.playlists?.items ?? [];
 
   const results =
-    type === "track"
-      ? tracks.filter(Boolean)
-      : playlists.filter(Boolean);
+    type === "track" ? tracks.filter(Boolean) : playlists.filter(Boolean);
 
   const total =
     type === "track"
-      ? data?.tracks?.total ?? 0
-      : data?.playlists?.total ?? 0;
+      ? (data?.tracks?.total ?? 0)
+      : (data?.playlists?.total ?? 0);
 
   const hasNext =
     type === "track"
@@ -112,7 +96,7 @@ const tracks = (data?.tracks?.items ?? []) as SpotifyApi.TrackItem[];
 
   const hasPrev = offset > 0;
 
-  const page = Math.floor(offset / LIMIT) + 1;
+  const page = Math.floor(offset / searchLimit) + 1;
 
   return (
     <div className={styles.page}>
@@ -134,92 +118,71 @@ const tracks = (data?.tracks?.items ?? []) as SpotifyApi.TrackItem[];
 
         <select
           value={type}
-          onChange={(e) =>
-            setType(e.target.value as SearchType)
-          }
+          onChange={(e) => {
+            setSearchParams({
+              q: query,
+              type: e.target.value as SearchType,
+              offset: "0",
+            });
+          }}
           className={styles.selectType}
         >
           <option value="track">Songs</option>
           <option value="playlist">Playlists</option>
         </select>
 
-        <button
-          onClick={handleSearch}
-          className={styles.searchBtn}
-        >
+        <button onClick={handleSearch} className={styles.searchBtn}>
           Search
         </button>
       </div>
 
-      {!query && (
-        <p className={styles.resultMeta}>
-          Enter a search term.
-        </p>
-      )}
+      {!query && <p className={styles.resultMeta}>Enter a search term.</p>}
 
       {query && (
         <p className={styles.resultMeta}>
-          {loading
-            ? "Searching..."
-            : `${total} results`}
+          {loading ? "Searching..." : `${total} results`}
         </p>
       )}
 
-      {error && (
-        <div className={styles.error}>
-          {error}
+      {error && <div className={styles.error}>{error}</div>}
+
+      {!loading && type === "playlist" && results.length > 0 && (
+        <div className={styles.grid}>
+          {playlists.filter(Boolean).map((playlist) => (
+            <PlaylistCard key={playlist.id} playlist={playlist} />
+          ))}
         </div>
       )}
 
-      {!loading &&
-        type === "playlist" &&
-        results.length > 0 && (
-          <div className={styles.grid}>
-{playlists.filter(Boolean).map((playlist) => (
-              <PlaylistCard
-                key={playlist.id}
-                playlist={playlist}
+      {!loading && type === "track" && results.length > 0 && (
+        <div className={styles.trackList}>
+          {tracks.map((track) => (
+            <div key={track.id} className={styles.trackRow}>
+              <img
+                src={track.album.images?.[0]?.url}
+                alt={track.name}
+                className={styles.trackImage}
               />
-            ))}
-          </div>
-        )}
 
-      {!loading &&
-        type === "track" &&
-        results.length > 0 && (
-          <div className={styles.trackList}>
-            {tracks.map((track) => (
-              <div
-                key={track.id}
-                className={styles.trackRow}
-              >
-                <img
-                  src={track.album.images?.[0]?.url}
-                  alt={track.name}
-                  className={styles.trackImage}
-                />
+              <div>
+                <p>{track.name}</p>
 
-                <div>
-                  <p>{track.name}</p>
-
-                  <p>
-                    {track.artists
-                      .map((artist) => artist.name)
-                      .join(", ")}
-                  </p>
-                </div>
+                <p>{track.artists.map((artist) => artist.name).join(", ")}</p>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {!loading && results.length > 0 && (
         <div className={styles.pagination}>
           <button
             onClick={() =>
-              setOffset((prev) =>
-                Math.max(prev - LIMIT, 0),
-              )
+              setSearchParams({
+                q: query,
+                type,
+                offset: String(Math.max(offset - searchLimit, 0)),
+              })
             }
             disabled={!hasPrev}
             className={styles.pageBtn}
@@ -227,13 +190,15 @@ const tracks = (data?.tracks?.items ?? []) as SpotifyApi.TrackItem[];
             ← Prev
           </button>
 
-          <span className={styles.pageNum}>
-            Page {page}
-          </span>
+          <span className={styles.pageNum}>Page {page}</span>
 
           <button
             onClick={() =>
-              setOffset((prev) => prev + LIMIT)
+              setSearchParams({
+                q: query,
+                type,
+                offset: String(offset + searchLimit),
+              })
             }
             disabled={!hasNext}
             className={styles.pageBtn}
