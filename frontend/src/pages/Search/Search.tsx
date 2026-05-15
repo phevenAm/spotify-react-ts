@@ -40,8 +40,6 @@ export default function Search() {
     async function runSearch() {
       setLoading(true);
       setError(null);
-      console.log(type, offset);
-
       try {
         const result = await searchSpotify(query, type, searchLimit, offset);
 
@@ -78,7 +76,7 @@ export default function Search() {
     });
   }
 
-  const tracks = (data?.tracks?.items ?? []) as SpotifyApi.TrackItem[];
+  const tracks = data?.tracks?.items ?? [];
   const playlists = data?.playlists?.items ?? [];
 
   const results =

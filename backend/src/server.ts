@@ -21,6 +21,7 @@ import type { SpotifyApi } from "./types/types";
 dotenv.config();
 
 const app = express();
+app.set("trust proxy", 1);
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
@@ -34,6 +35,17 @@ const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID!;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET!;
 const REDIRECT_URI = process.env.REDIRECT_URI!;
 const FRONTEND_URL = process.env.FRONTEND_URL!;
+const SESSION_SECRET = process.env.SESSION_SECRET;
+
+if (!SESSION_SECRET) {
+  throw new Error("Missing SESSION_SECRET environment variable");
+}
+
+const allowedOrigins = [
+  "http://127.0.0.1:5173",
+  "http://localhost:5173",
+  FRONTEND_URL,
+];
 
 const { errorNotAutherised } = EN;
 
@@ -63,11 +75,7 @@ type SearchResponse = SpotifyApi.SearchResponse | ApiError;
 
 app.use(
   cors({
-    origin: [
-      "http://127.0.0.1:5173",
-      "http://localhost:5173",
-      "https://spotify-react-ts-five.vercel.app",
-    ],
+    origin: allowedOrigins,
     credentials: true,
   }),
 );
@@ -76,7 +84,7 @@ app.use(
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET!,
+    secret: SESSION_SECRET,
 
     resave: false,
     saveUninitialized: false,
@@ -106,9 +114,9 @@ app.get("/.well-known/appspecific/com.chrome.devtools.json", (_req, res) => {
 // AUTH ROUTES
 // ─────────────────────────────────────────────────────────────
 
-app.get("/login", (_req, res) => {
+app.get("/login", (req, res) => {
   const state = generateRandomString(16);
-  _req.session.oauth_state = state;
+  req.session.oauth_state = state;
 
   const scope =
     "user-read-private user-read-email playlist-read-private user-top-read";
@@ -122,22 +130,38 @@ app.get("/login", (_req, res) => {
     show_dialog: true,
   });
 
-  res.redirect(`https://accounts.spotify.com/authorize?${queryParams}`);
+  const spotifyAuthorizeUrl =
+    `https://accounts.spotify.com/authorize?${queryParams}`;
+
+  req.session.save((err: Error | null) => {
+    if (err) {
+      console.error("Session save error before Spotify redirect:", err);
+      return res.status(500).send("Session save failed");
+    }
+
+    res.redirect(spotifyAuthorizeUrl);
+  });
 });
 
-//!After sign in, request access and refresh tokens via callback (callback from spotidy gives a temp code and state.)
+//!After sign in, request access and refresh tokens via callback (callback from Spotify gives a temp code and state.)
 app.get("/callback", async (req, res) => {
-  //const returnedState =
-  //  typeof req.query.state === "string" ? req.query.state : null;
+  const returnedState =
+    typeof req.query.state === "string" ? req.query.state : null;
 
-  //const storedState = req.session.oauth_state;
+  const storedState = req.session.oauth_state;
 
-  //console.log(returnedState, storedState);
+  if (!returnedState || returnedState !== storedState) {
+    console.error("Invalid OAuth state", {
+      returnedState,
+      storedState,
+      sessionId: req.sessionID,
+      hasCookie: Boolean(req.headers.cookie),
+    });
 
-  //if (!returnedState || returnedState !== storedState) {
-  //  return;
-  //  //return res.status(400).send("Invalid state");
-  //}
+    return res.status(400).send("Invalid state");
+  }
+
+  delete req.session.oauth_state;
 
   const code = typeof req.query.code === "string" ? req.query.code : null;
   if (!code) {

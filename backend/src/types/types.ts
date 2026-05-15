@@ -47,7 +47,16 @@ export namespace SpotifyApi {
 
   export interface SearchResponse {
     playlists?: PlaylistPage;
-    tracks?: TrackPage;
+    tracks?: SearchTrackPage;
+  }
+
+  export interface SearchTrackPage {
+    items: Track[];
+    total: number;
+    limit: number;
+    offset: number;
+    next: string | null;
+    previous: string | null;
   }
 
   export interface TrackPage {
