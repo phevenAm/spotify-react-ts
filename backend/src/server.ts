@@ -35,17 +35,6 @@ const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID!;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET!;
 const REDIRECT_URI = process.env.REDIRECT_URI!;
 const FRONTEND_URL = process.env.FRONTEND_URL!;
-const SESSION_SECRET = process.env.SESSION_SECRET;
-
-if (!SESSION_SECRET) {
-  throw new Error("Missing SESSION_SECRET environment variable");
-}
-
-const allowedOrigins = [
-  "http://127.0.0.1:5173",
-  "http://localhost:5173",
-  FRONTEND_URL,
-];
 
 const { errorNotAutherised } = EN;
 
@@ -68,23 +57,27 @@ type SearchResponse = SpotifyApi.SearchResponse | ApiError;
 
 // ─────────────────────────────────────────────────────────────
 // MIDDLEWARE
-// Runs BEFORE routes
+//Runs BEFORE all routes.
 // ─────────────────────────────────────────────────────────────
 
 // ---- CORS ----
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: [
+      "http://127.0.0.1:5173",
+      "http://localhost:5173",
+      "https://spotify-react-ts-five.vercel.app",
+    ],
     credentials: true,
   }),
 );
 
-// ---- SESSION ----
+// ---- SESSION (kept for oauth_state CSRF protection only) ----
 
 app.use(
   session({
-    secret: SESSION_SECRET,
+    secret: process.env.SESSION_SECRET!,
 
     resave: false,
     saveUninitialized: false,
@@ -114,9 +107,9 @@ app.get("/.well-known/appspecific/com.chrome.devtools.json", (_req, res) => {
 // AUTH ROUTES
 // ─────────────────────────────────────────────────────────────
 
-app.get("/login", (req, res) => {
+app.get("/login", (_req, res) => {
   const state = generateRandomString(16);
-  req.session.oauth_state = state;
+  _req.session.oauth_state = state;
 
   const scope =
     "user-read-private user-read-email playlist-read-private user-top-read";
@@ -127,46 +120,17 @@ app.get("/login", (req, res) => {
     scope,
     redirect_uri: REDIRECT_URI,
     state,
+    show_dialog: true,
   });
 
-  const spotifyAuthorizeUrl = `https://accounts.spotify.com/authorize?${queryParams}`;
-
-  req.session.save((err: Error | null) => {
-    if (err) {
-      console.error("Session save error before Spotify redirect:", err);
-      return res.status(500).send("Session save failed");
-    }
-
-    res.redirect(spotifyAuthorizeUrl);
-  });
+  res.redirect(`https://accounts.spotify.com/authorize?${queryParams}`);
 });
 
-//!After sign in, request access and refresh tokens via callback (callback from Spotify gives a temp code and state.)
+// After sign in, Spotify sends a temp code here.
+// We exchange it for tokens and pass the access_token to the frontend
+// via the URL fragment — this avoids cross-site cookie issues between
+// the Render backend and the Vercel frontend.
 app.get("/callback", async (req, res) => {
-  const returnedState =
-    typeof req.query.state === "string" ? req.query.state : null;
-
-  const storedState = req.session.oauth_state;
-
-  console.log("CALLBACK SESSION:", {
-    sessionID: req.sessionID,
-    hasAccessToken: Boolean(req.session.access_token),
-    cookie: req.session.cookie,
-  });
-
-  if (!returnedState || returnedState !== storedState) {
-    console.error("Invalid OAuth state", {
-      returnedState,
-      storedState,
-      sessionId: req.sessionID,
-      hasCookie: Boolean(req.headers.cookie),
-    });
-
-    return res.status(400).send("Invalid state");
-  }
-
-  delete req.session.oauth_state;
-
   const code = typeof req.query.code === "string" ? req.query.code : null;
   if (!code) {
     return res.status(400).send("Missing code parameter");
@@ -193,19 +157,16 @@ app.get("/callback", async (req, res) => {
       },
     );
 
-    const { access_token, refresh_token } = response.data;
+    const { access_token, expires_in } = response.data;
 
-    req.session.access_token = access_token;
-    req.session.refresh_token = refresh_token;
-
-    req.session.save((err: Error | null) => {
-      if (err) {
-        console.error("Session save error:", err);
-        return res.status(500).send("Session save failed");
-      }
-
-      res.redirect(FRONTEND_URL);
+    // Pass the token to the frontend in the URL fragment so the browser
+    // never sends it to any server, and no cross-site cookie is needed.
+    const params = new URLSearchParams({
+      access_token,
+      expires_in: String(expires_in),
     });
+
+    res.redirect(`${FRONTEND_URL}/#${params.toString()}`);
   } catch (error: any) {
     console.error("TOKEN ERROR:", error.response?.data || error.message);
 
@@ -215,6 +176,8 @@ app.get("/callback", async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // USER ROUTES
+// All protected routes now read the token from the Authorization
+// header sent by the frontend instead of from the session.
 // ─────────────────────────────────────────────────────────────
 
 app.get("/me", async (req, res) => {

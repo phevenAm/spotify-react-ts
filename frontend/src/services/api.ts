@@ -6,6 +6,7 @@
 // ============================================================
 
 import type { SpotifyApi } from '../../../shared/types';
+import { getAccessToken } from './tokenStore';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -15,13 +16,23 @@ async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const token = getAccessToken();
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
+
+  // Attach the Bearer token when we have one so the backend can
+  // authenticate the request without relying on a cross-site cookie.
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${BASE_URL}${path}`, {
     ...options,
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -65,7 +76,6 @@ export async function searchSpotify(
 }
 
 // ---- Search playlists ----
-// Kept for pages that specifically want playlist-only search.
 export async function searchPlaylists(
   q: string,
   limit = 20,
