@@ -130,8 +130,7 @@ app.get("/login", (req, res) => {
     show_dialog: true,
   });
 
-  const spotifyAuthorizeUrl =
-    `https://accounts.spotify.com/authorize?${queryParams}`;
+  const spotifyAuthorizeUrl = `https://accounts.spotify.com/authorize?${queryParams}`;
 
   req.session.save((err: Error | null) => {
     if (err) {
@@ -149,6 +148,12 @@ app.get("/callback", async (req, res) => {
     typeof req.query.state === "string" ? req.query.state : null;
 
   const storedState = req.session.oauth_state;
+
+  console.log("CALLBACK SESSION:", {
+    sessionID: req.sessionID,
+    hasAccessToken: Boolean(req.session.access_token),
+    cookie: req.session.cookie,
+  });
 
   if (!returnedState || returnedState !== storedState) {
     console.error("Invalid OAuth state", {
