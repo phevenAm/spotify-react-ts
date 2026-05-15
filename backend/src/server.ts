@@ -127,14 +127,17 @@ app.get("/login", (_req, res) => {
 
 //!After sign in, request access and refresh tokens via callback (callback from spotidy gives a temp code and state.)
 app.get("/callback", async (req, res) => {
-  const returnedState =
-    typeof req.query.state === "string" ? req.query.state : null;
+  //const returnedState =
+  //  typeof req.query.state === "string" ? req.query.state : null;
 
-  const storedState = req.session.oauth_state;
+  //const storedState = req.session.oauth_state;
 
-  if (!returnedState || returnedState !== storedState) {
-    return res.status(400).send("Invalid state");
-  }
+  //console.log(returnedState, storedState);
+
+  //if (!returnedState || returnedState !== storedState) {
+  //  return;
+  //  //return res.status(400).send("Invalid state");
+  //}
 
   const code = typeof req.query.code === "string" ? req.query.code : null;
   if (!code) {
