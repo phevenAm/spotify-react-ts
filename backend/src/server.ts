@@ -127,7 +127,6 @@ app.get("/login", (req, res) => {
     scope,
     redirect_uri: REDIRECT_URI,
     state,
-    show_dialog: true,
   });
 
   const spotifyAuthorizeUrl = `https://accounts.spotify.com/authorize?${queryParams}`;
