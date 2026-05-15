@@ -167,10 +167,9 @@ app.get("/callback", async (req, res) => {
     req.session.access_token = access_token;
     req.session.refresh_token = refresh_token;
 
-    req.session.save((err) => {
+    req.session.save((err: Error | null) => {
       if (err) {
         console.error("Session save error:", err);
-
         return res.status(500).send("Session save failed");
       }
 
