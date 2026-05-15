@@ -8,7 +8,6 @@
 
     "target": "ES2020",
     "esModuleInterop": true,
-    "types": ["node", "express-session"],
 
     "sourceMap": true,
     "strict": true,
