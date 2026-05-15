@@ -5,34 +5,23 @@
 // the backend which holds the Bearer token.
 // ============================================================
 
-import type { SpotifyApi } from '../../../shared/types';
-import { getAccessToken } from './tokenStore';
+import type { SpotifyApi } from "../../../shared/types";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-export type SearchType = 'track' | 'playlist';
+export type SearchType = "track" | "playlist";
 
 async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token = getAccessToken();
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> || {}),
-  };
-
-  // Attach the Bearer token when we have one so the backend can
-  // authenticate the request without relying on a cross-site cookie.
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   const response = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    credentials: 'include',
-    headers,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
   });
 
   if (!response.ok) {
@@ -50,12 +39,14 @@ export function loginWithSpotify(): void {
 
 // ---- User ----
 export async function fetchUser() {
-  return apiFetch<SpotifyApi.UserProfile>('/me');
+  return apiFetch<SpotifyApi.UserProfile>("/me");
 }
 
 // ---- Playlists ----
 export async function fetchMyPlaylists(limit = 20, offset = 0) {
-  return apiFetch<SpotifyApi.PlaylistPage>(`/user/playlists?limit=${limit}&offset=${offset}`);
+  return apiFetch<SpotifyApi.PlaylistPage>(
+    `/user/playlists?limit=${limit}&offset=${offset}`,
+  );
 }
 
 // ---- Generic Spotify search ----
@@ -76,17 +67,19 @@ export async function searchSpotify(
 }
 
 // ---- Search playlists ----
-export async function searchPlaylists(
-  q: string,
-  limit = 20,
-  offset = 0,
-) {
-  return searchSpotify(q, 'playlist', limit, offset);
+export async function searchPlaylists(q: string, limit = 20, offset = 0) {
+  return searchSpotify(q, "playlist", limit, offset);
 }
 
 // ---- Playlist tracks ----
-export async function fetchPlaylistTracks(playlistId: string, limit = 20, offset = 0) {
-  return apiFetch<SpotifyApi.TrackPage>(`/playlist/${playlistId}/tracks?limit=${limit}&offset=${offset}`);
+export async function fetchPlaylistTracks(
+  playlistId: string,
+  limit = 20,
+  offset = 0,
+) {
+  return apiFetch<SpotifyApi.TrackPage>(
+    `/playlist/${playlistId}/tracks?limit=${limit}&offset=${offset}`,
+  );
 }
 
 export type { SpotifyApi };
